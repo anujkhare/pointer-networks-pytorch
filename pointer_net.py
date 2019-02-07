@@ -1,8 +1,7 @@
-# NOTE: COPIED FROM https://github.com/shiretzet/PointerNet
+from torch.nn import Parameter
 import numpy as np
 import torch
 import torch.nn as nn
-from torch.nn import Parameter
 import torch.nn.functional as F
 
 from scaled_dot_attention import ScaledDotAttention
@@ -20,15 +19,12 @@ class Encoder(torch.nn.Module):
         self.proj = torch.nn.Linear(n_in, n_embed)
         self.rnn = torch.nn.LSTM(input_size=n_embed, hidden_size=n_hidden, num_layers=n_layers, bidirectional=birnn, batch_first=True)
     
-    def forward(self, inputs):
+    def forward(self, inputs: torch.Tensor):
         # inputs: batch * seq_len * n_dim
-#         print(inputs.shape)
         embedded = self.proj(inputs)
-        # FIXME: RELU??
-#         print(embedded.shape)
+        # FIXME: should we add relu?
         
         hiddens, _ = self.rnn(embedded)  # outputs: batch * seq_len * (num_directions * n_hidden)
-        assert len(hiddens)  # FIXME
         return hiddens
 
 
@@ -45,9 +41,9 @@ class Decoder(torch.nn.Module):
         self.sda = ScaledDotAttention(d_k=d_k, d_q=n_hidden, model_dim=64)
     
     @staticmethod
-    def _get_one_hot_values(n_values):
-        """ Returns a n_values*n_values tensor containing one-hot vectors """
-        values = torch.from_numpy(np.diag(np.ones(n_values)).astype(np.float32))
+    def _get_identity_matrix(n_side: int):
+        """ Returns a tensor containing an n_side*n_side identity matrix """
+        values = torch.from_numpy(np.diag(np.ones(n_side)).astype(np.float32))
         return values
         
     def forward(self, max_length: int, encoder_hiddens):
@@ -66,16 +62,13 @@ class Decoder(torch.nn.Module):
         
         hidden_prev = encoder_hiddens[0][-1].detach()
         for ix in range(max_length):
-            # FIXME: I'm not sure of what I should pass to the network as input. The outputs are of varying sizes, so that's not possible..
-            # For now, I'll pass the hidden state.
+            # FIXME: Usually, the outputs of the network are passed as the next input. However, the outputs are of varying sizes here
+            # So, that's not possible.. For now, I'll pass the previous hidden state.
             hidden, _ = self.rnn(hidden_prev.view(1, -1))
-#             print(hidden.shape)
             
             # Calculate attention weights
             att_weights = self.sda(K=encoder_hiddens, V=one_hot_vecs, Q=hidden.view(1, -1))
             att_weights = att_weights.view(1, -1)
-#             print('att_weights', att_weights.shape)
-#             print('encoder hidden', encoder_hiddens.shape)
             
             # Store
             output_hiddens.append(hidden)

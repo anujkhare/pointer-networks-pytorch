@@ -22,9 +22,23 @@ def generate_examples(num, n_min, n_max):
 
 if __name__ == '__main__':
     # planar convex hull
-    e_train = generate_examples(1048576, 5, 50)
-    e_valid = generate_examples(1000, 5, 50)
-    e_test = generate_examples(1000, 50, 50)
+#     size = '5-50-large'
+#     size = '5-small'
+    size = '5-tiny'
+    
+    if size == '5-50-large':
+        e_train = generate_examples(1048576, 5, 50)
+        e_valid = generate_examples(1000, 5, 50)
+        e_test = generate_examples(1000, 50, 50)
+    if size == '5-small':
+        e_train = generate_examples(100000, 5, 5)
+        e_valid = generate_examples(1000, 5, 5)
+        e_test = generate_examples(1000, 5, 5)
+    if size == '5-tiny':
+        e_train = generate_examples(100, 5, 5)
+        e_valid = generate_examples(100, 5, 5)
+        e_test = generate_examples(100, 5, 5)
+        
     obj = (e_train, e_valid, e_test)
 
-    numpy.savez_compressed('convex_hull.npz', obj)
+    numpy.savez_compressed('convex_hull_{}.npz'.format(size), obj)

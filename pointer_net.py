@@ -32,7 +32,7 @@ class Decoder(torch.nn.Module):
     """
     Uses the encoder hidden states, produces target_length outputs.
     """
-    def __init__(self, n_hidden: int = 256, d_k: int = 256) -> None:
+    def __init__(self, n_hidden: int = 64, d_k: int = 256) -> None:
         super().__init__()
 
         self.rnn = torch.nn.LSTMCell(input_size=n_hidden, hidden_size=n_hidden)
@@ -56,7 +56,7 @@ class Decoder(torch.nn.Module):
         input_len = encoder_hiddens.shape[1]
     
         # For getting the probabilities using attention, we supply one-hot vectors the size of the input seq as the values
-        one_hot_vecs = self._get_one_hot_values(input_len).to(encoder_hiddens.device).view(1, input_len, input_len)
+        identity = self._get_identity_matrix(input_len).to(encoder_hiddens.device).view(1, input_len, input_len)
         
         output_hiddens, pointers = [], []
         
@@ -64,10 +64,10 @@ class Decoder(torch.nn.Module):
         for ix in range(max_length):
             # FIXME: Usually, the outputs of the network are passed as the next input. However, the outputs are of varying sizes here
             # So, that's not possible.. For now, I'll pass the previous hidden state.
-            hidden, _ = self.rnn(hidden_prev.view(1, -1))
+            hidden, _ = self.rnn(hidden_prev.view(1, -1))  # FIXME: pass the hidden state as well, initialize the hidden state
             
             # Calculate attention weights
-            att_weights = self.sda(K=encoder_hiddens, V=one_hot_vecs, Q=hidden.view(1, -1))
+            att_weights = self.sda(K=encoder_hiddens, V=identity, Q=hidden.view(1, -1))
             att_weights = att_weights.view(1, -1)
             
             # Store

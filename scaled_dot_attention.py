@@ -12,12 +12,13 @@ class ScaledDotAttention(torch.nn.Module):
 
         self.model_dim = model_dim
 
-    def forward(self,K,Q=None,V=None):
+    def forward(self, K, Q=None, V=None, mask=None, return_probs=False):
         # Input is assumed to be bsz * n_k * d_k
         N,d = K.shape[-2:]
 
-        if Q is None and V is None:
+        if Q is None:
             Q = K
+        if V is None:
             V = K
 
         # The number of keys and values should be the same
@@ -26,19 +27,25 @@ class ScaledDotAttention(torch.nn.Module):
         # linearly project
         proj_k = self.proj_k(K) # -> bsz * n_k * model_dim
         proj_q = self.proj_q(Q) # -> bsz * n_q * model_dim
-#         proj_v = self.proj_v(V) # -> bsz * n_k * model_dim
 
         # dot product
         dot1 = torch.matmul(proj_q, proj_k.transpose(1,2)) # -> bsz * n_q * n_k
 
         # scale
         scaled = dot1 / np.sqrt(self.model_dim)
+        
+        # Mask out values
+        if mask is not None:
+            scaled = scaled.masked_fill(mask, -np.inf)
 
         # softmax over axis 1, 
         sft = F.softmax(scaled,dim=-1)  # -> bsz * n_q * n_k
 
+        # Just return the attention weights - for pointer networks
+        if return_probs:
+            return sft
+
         # dot product with attn signal
-#         rslt = torch.matmul(sft, proj_v) # -> Nxd
         rslt = torch.matmul(sft, V) # -> Nxd
 
         return rslt
@@ -55,7 +62,6 @@ def test_sda_batched():
     V = torch.from_numpy(np.random.rand(bsz, 30, d_v).astype(np.float32))
 
     scaled_attention = ScaledDotAttention(d_q=d_q, d_k=d_k, model_dim=32)
-#     scaled_attention = ScaledDotAttention(d_q=d_q, d_k=d_k, d_v=d_v, model_dim=32)
 
     values = scaled_attention(K=K, Q=Q, V=V)
     assert values.shape[1] == 20 and values.shape[2] == d_v

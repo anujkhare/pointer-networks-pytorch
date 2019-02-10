@@ -14,7 +14,7 @@ class ConvexHullDataset:
         datum = self.data[ix]
         return {
             'sequence': datum[0].astype(np.float32),
-            'pointers': datum[1].astype(np.long).reshape(-1, 1),  # FIXME: 1-based
+            'pointers': datum[1].astype(np.long).reshape(-1, 1) - 1,  # 0-based
         }
 
     def __len__(self) -> int:
@@ -42,7 +42,7 @@ def get_padded_tensor_and_lens(list_seqs, pad_constant_value=0):
 
 def collate_fn(batch):
     sequences, lens1 = get_padded_tensor_and_lens([sample['sequence'] for sample in batch], pad_constant_value=0)
-    pointers, lens2 = get_padded_tensor_and_lens([sample['pointers'] for sample in batch], pad_constant_value=-1)
+    pointers, lens2 = get_padded_tensor_and_lens([sample['pointers'] for sample in batch], pad_constant_value=-100)
     
     # Sort such that the longest sequence is first. Sort the pointers to match the sequences.
     inds_sorted_desc = np.argsort(lens1)[::-1]

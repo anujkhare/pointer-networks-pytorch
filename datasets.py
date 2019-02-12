@@ -1,20 +1,30 @@
 import numpy as np
 
 
+EOL_TOKEN = [-1, -1]
+
 class ConvexHullDataset:
-    def __init__(self, data: np.ndarray) -> None:
+    def __init__(self, data: np.ndarray, append_eol: bool = False) -> None:
         if not isinstance(data, np.ndarray):
             raise TypeError
         if not data.shape[1] == 2:
             raise ValueError('Must have 2 columns: The coordinates of points, the indices of the convex hull')
         
         self.data = data
+        self.append_eol = append_eol
     
     def __getitem__(self, ix):
         datum = self.data[ix]
+        sequence = datum[0].astype(np.float32)
+        pointers = datum[1].astype(np.long).reshape(-1, 1) - 1
+        
+        if self.append_eol:  # Append the EOL Token to demarcate the end of the line / sequence
+            sequence = np.vstack([sequence, [EOL_TOKEN]]).astype(np.float32)
+            pointers = np.vstack([pointers, [len(sequence)-1]]).astype(np.long)
+
         return {
-            'sequence': datum[0].astype(np.float32),
-            'pointers': datum[1].astype(np.long).reshape(-1, 1) - 1,  # 0-based
+            'sequence': sequence,
+            'pointers': pointers,  # 0-based
         }
 
     def __len__(self) -> int:

@@ -14,20 +14,20 @@ def generate_random_sample(
     
     Each "line" is an np.ndarray containing between 1-10 2-D points on the same y-coordinate.
     """
-    assert 0 < n_lines_min <= n_lines_max <= 10
-    assert 0 < n_points_min <= n_points_max <= 10
+    assert 0 < n_lines_min <= n_lines_max <= n_line_buckets
+    assert 0 < n_points_min <= n_points_max <= n_line_buckets
 
     n_lines = np.random.choice(np.arange(n_lines_min, n_lines_max + 1))
 
     # all the lines will be sampled at the discrete intervals - 0.1, 0.2 .... 1.0
-    line_pos = np.random.choice(np.arange(10), n_lines, replace=False) + 1
+    line_pos = np.random.choice(np.arange(n_line_buckets), n_lines, replace=False) + 1
     line_pos = sorted(line_pos, reverse=True)  # NOTE: THIS IS IMPORTANT! ORDER MATTERS: ALWAYS GIVE THE LINES TOP to BOTTOM
 
     coords = []
     for ix in range(n_lines):
         n_points = np.random.choice(np.arange(n_points_min, n_points_max + 1))
         x = sorted(np.random.random(n_points))
-        y = np.array([line_pos[ix] / 10] * n_points)
+        y = np.array([line_pos[ix] / n_line_buckets] * n_points)
         
         if add_noise:
             # +- 30% of the min possible distance between two lines. for >= 50% - the task is NOT well defined..

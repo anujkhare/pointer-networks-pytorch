@@ -4,7 +4,11 @@ import numpy as np
 
 EOL_TOKEN = [-1, -1]
 
-def generate_random_sample(n_lines_min=1, n_lines_max=4, n_points_min=1, n_points_max=10) -> List[np.ndarray]:
+
+def generate_random_sample(
+    n_lines_min=1, n_lines_max=4, n_points_min=1, n_points_max=10, add_noise: bool = False,
+    n_line_buckets: int = 10,
+) -> List[np.ndarray]:
     """
     Returns a list of "lines".
     
@@ -23,15 +27,23 @@ def generate_random_sample(n_lines_min=1, n_lines_max=4, n_points_min=1, n_point
     for ix in range(n_lines):
         n_points = np.random.choice(np.arange(n_points_min, n_points_max + 1))
         x = sorted(np.random.random(n_points))
-        y = [line_pos[ix] / 10] * n_points
-#         print(x, y)
+        y = np.array([line_pos[ix] / 10] * n_points)
+        
+        if add_noise:
+            # +- 30% of the min possible distance between two lines. for >= 50% - the task is NOT well defined..
+            noise_max = 0.30 * 1. / n_line_buckets
+
+            y_noise = np.random.rand(n_points) * noise_max
+            y += y_noise
+
         points = np.array(list(zip(x, y))).astype(np.float)
         coords.append(points)
 
     return coords
 
-def generate_points_pointers(n_lines_min=1, n_lines_max=4, n_points_min=1, n_points_max=10) -> Dict[str, np.ndarray]:
-    sample = generate_random_sample()
+
+def generate_points_pointers(**kwargs) -> Dict[str, np.ndarray]:
+    sample = generate_random_sample(**kwargs)
     
     # Create the sequence of all points
     sequence = np.array([EOL_TOKEN])
@@ -60,16 +72,26 @@ def generate_points_pointers(n_lines_min=1, n_lines_max=4, n_points_min=1, n_poi
     }
 
 
-def create_dataset(n_samples = 10, filename = 'lines_data.npz'):
+def create_dataset(n_samples = 10, filename = 'lines_data.npz', random_n_line_buckets: bool = False, **kwargs):
     data = []
     for ix in range(n_samples):
-        datum = generate_points_pointers()
+        datum = generate_points_pointers(**kwargs)
         data.append(datum)
 
     np.savez_compressed(filename, data)
 
 
 if __name__ == '__main__':
-    pass
-    create_dataset(n_samples=100000, filename='lines_data_train.npz')
-    create_dataset(n_samples=1000, filename='lines_data_val.npz')
+    choice = 'insane'
+    
+    if choice == 'easy':
+        create_dataset(n_samples=100000, filename='lines_data_train.npz', n_lines_max=4)
+        create_dataset(n_samples=1000, filename='lines_data_val.npz', n_lines_max=4)
+
+    if choice == 'hard':
+        create_dataset(n_samples=500000, filename='lines_data_train.npz', n_lines_max=10, add_noise=True)
+        create_dataset(n_samples=5000, filename='lines_data_val.npz', n_lines_max=10, add_noise=True)
+
+    if choice == 'insane':
+        create_dataset(n_samples=500000, filename='lines_data_train.npz', n_lines_max=100, n_line_buckets=100)
+        create_dataset(n_samples=5000, filename='lines_data_val.npz', n_lines_max=100, n_line_buckets=100)

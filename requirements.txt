@@ -1,0 +1,7 @@
+docreader==0.1.0
+docschema==0.0.5
+matplotlib
+numpy
+pandas
+scipy
+torch==1.0.0

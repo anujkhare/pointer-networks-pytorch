@@ -15,6 +15,8 @@ The convex hull data generation code was copied from [here](https://github.com/v
 2. Simple line grouping task
 3. Documents: words to container (textline/field/key/value/etc.) using b-boxes
 
+**The actual model is implemented in `pointer_net.py`**
+
 
 ## Usage
 For any of the above tasks:

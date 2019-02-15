@@ -82,16 +82,22 @@ def create_dataset(n_samples = 10, filename = 'lines_data.npz', random_n_line_bu
 
 
 if __name__ == '__main__':
-    choice = 'insane'
+    choice = 'one-off'
+
+    if choice == 'one-off':
+        create_dataset(n_samples=1000, filename='lines_data_test.npz', n_lines_max=10, add_noise=True)
     
     if choice == 'easy':
         create_dataset(n_samples=100000, filename='lines_data_train.npz', n_lines_max=4)
         create_dataset(n_samples=1000, filename='lines_data_val.npz', n_lines_max=4)
+        create_dataset(n_samples=1000, filename='lines_data_test.npz', n_lines_max=4)
 
     if choice == 'hard':
         create_dataset(n_samples=500000, filename='lines_data_train.npz', n_lines_max=10, add_noise=True)
         create_dataset(n_samples=5000, filename='lines_data_val.npz', n_lines_max=10, add_noise=True)
+        create_dataset(n_samples=1000, filename='lines_data_test.npz', n_lines_max=10, add_noise=True)
 
     if choice == 'insane':
         create_dataset(n_samples=500000, filename='lines_data_train.npz', n_lines_max=100, n_line_buckets=100)
         create_dataset(n_samples=5000, filename='lines_data_val.npz', n_lines_max=100, n_line_buckets=100)
+        create_dataset(n_samples=1000, filename='lines_data_test.npz', n_lines_max=100, n_line_buckets=100)
